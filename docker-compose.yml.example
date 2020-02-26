@@ -1,0 +1,56 @@
+version: '2.2'
+
+services:
+  # Database
+  moodle_db:
+    image: mariadb:10.2
+    container_name: moodle_db
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_DATABASE=__DB_NAME__
+      - MYSQL_ROOT_USER=__DB_USER__
+      - MYSQL_ROOT_PASSWORD=__DB_PWD__
+    networks: 
+      - moodle_net
+  
+  # Phpmyadmin
+  moodle_pma:
+    image: phpmyadmin/phpmyadmin:4.7
+    container_name: moodle_pma
+    ports:
+      - 9090:80
+    environment:
+      - PMA_HOST=moodle_db
+      - PMA_PORT=3306
+    networks: 
+      - moodle_net
+    depends_on:
+      - moodle_db
+  
+  # Application & server
+  moodle_app:
+    build: ./docker
+    image: moodle_app:1.2
+    container_name: moodle_app
+    working_dir: /var/www/moodle
+    volumes:
+      - ./app:/var/www/moodle
+      - ./moodledata:/var/www/moodledata
+      - ./docker/apache/000-default.conf:/etc/apache2/sites-enabled/000-default.conf
+    entrypoint:
+      - php-fpm
+    depends_on:
+      - moodle_db
+    ports:
+      - 80:80
+    networks: 
+      - moodle_net
+
+
+#Vigan12345678
+
+# Virtual networks
+networks:
+  moodle_net:
+    driver: bridge
